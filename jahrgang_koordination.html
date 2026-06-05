@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jahrgangskoordination</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f5f5f0;color:#1a1a18;min-height:100vh}
+.topbar{background:#fff;border-bottom:1px solid #e0dfd6;padding:12px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.topbar h1{font-size:16px;font-weight:500;flex:1}
+.sync-status{font-size:12px;padding:3px 10px;border-radius:6px;font-weight:500}
+.sync-ok{background:#eaf3de;color:#3b6d11}
+.sync-err{background:#fcebeb;color:#a32d2d}
+.sync-loading{background:#faeeda;color:#854f0b}
+.container{max-width:780px;margin:24px auto;padding:0 16px}
+.tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid #d3d1c7}
+.tab{padding:10px 20px;cursor:pointer;font-size:14px;color:#5f5e5a;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none}
+.tab.active{color:#1a1a18;border-bottom:2px solid #1a1a18;font-weight:500}
+.card{background:#fff;border:1px solid #d3d1c7;border-radius:12px;padding:16px 20px;margin-bottom:12px}
+h2{font-size:16px;font-weight:500;margin-bottom:12px}
+h3{font-size:13px;font-weight:500;margin-bottom:8px;color:#5f5e5a;text-transform:uppercase;letter-spacing:0.03em}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+input[type=text],input[type=url],input[type=password]{flex:1;min-width:160px;font-size:14px;padding:7px 10px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#1a1a18}
+input:focus{outline:none;border-color:#888780}
+button{font-size:13px;padding:7px 16px;cursor:pointer;border-radius:8px;border:1px solid #d3d1c7;background:#fff;color:#1a1a18}
+button:hover{background:#f1efe8}
+.btn-primary{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.btn-primary:hover{background:#2c2c2a}
+.btn-danger{background:#fcebeb;color:#a32d2d;border-color:#f7c1c1}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:500}
+.badge-open{background:#f1efe8;color:#5f5e5a}
+.badge-done{background:#e6f1fb;color:#185fa5}
+.badge-warn{background:#faeeda;color:#854f0b}
+.badge-no{background:#fcebeb;color:#a32d2d}
+.person-row{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #f1efe8;flex-wrap:wrap}
+.person-row:last-child{border-bottom:none}
+.person-name{flex:1;font-size:14px;min-width:100px}
+.slot-label{font-size:12px;color:#5f5e5a;flex-shrink:0}
+.vote-btn{font-size:12px;padding:4px 11px;cursor:pointer;border-radius:7px;border:1px solid #d3d1c7;background:#f1efe8;color:#5f5e5a}
+.vote-btn.yes{background:#eaf3de;color:#3b6d11;border-color:#c0dd97}
+.vote-btn.no{background:#fcebeb;color:#a32d2d;border-color:#f7c1c1}
+.slot-warn{font-size:11px;padding:2px 7px;border-radius:6px;background:#faeeda;color:#854f0b;font-weight:500}
+.assigned{font-size:12px;font-weight:500;color:#185fa5}
+.extra-yes{font-size:12px;color:#854f0b}
+.footer-row{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.progress-bar{height:4px;background:#f1efe8;border-radius:2px;margin-top:8px}
+.progress-fill{height:4px;background:#639922;border-radius:2px;transition:width 0.3s}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
+.metric{background:#f1efe8;border-radius:8px;padding:12px 16px}
+.metric-label{font-size:12px;color:#5f5e5a;margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:500}
+.klasse-block{margin-bottom:12px;padding-left:12px;border-left:2px solid #d3d1c7}
+.setup-box{background:#fff;border:1px solid #d3d1c7;border-radius:12px;padding:28px;max-width:540px;margin:48px auto}
+.setup-box h2{font-size:18px;margin-bottom:6px}
+.setup-box p{font-size:14px;color:#5f5e5a;margin-bottom:20px;line-height:1.6}
+label{display:block;font-size:13px;color:#5f5e5a;margin-bottom:4px;margin-top:14px}
+.hint{font-size:12px;color:#888780;margin-top:3px;line-height:1.5}
+.step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start}
+.step-num{background:#1a1a18;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0;margin-top:1px}
+.step-text{font-size:13px;color:#1a1a18;line-height:1.6}
+.step-text b{font-weight:500}
+table{width:100%;font-size:13px;border-collapse:collapse}
+th{text-align:left;padding:6px 8px;font-weight:500;color:#5f5e5a;border-bottom:1px solid #d3d1c7}
+td{padding:7px 8px;border-bottom:1px solid #f1efe8}
+.divider{border:none;border-top:1px solid #e0dfd6;margin:20px 0}
+</style>
+</head>
+<body>
+
+<div id="setup-screen" style="display:none">
+  <div class="setup-box">
+    <h2>Einrichtung</h2>
+    <p>Verbinde das Tool mit einem freigegebenen Nextcloud-Ordner. Folge diesen Schritten einmalig in Nextcloud:</p>
+
+    <div class="step"><div class="step-num">1</div><div class="step-text">Neuen Ordner anlegen, z.B. <b>Jahrgangskoordination</b></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">Ordner per Rechtsklick → <b>Teilen</b> → <b>Link teilen</b> → <b>Passwort setzen</b></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">Den Freigabe-Link kopieren, z.B. <b>https://cloud.schule.de/s/abc123xyz</b> – das <b>abc123xyz</b> am Ende ist dein Token</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text">Den Link und das Passwort unten eintragen und auf <b>Verbinden</b> klicken</div></div>
+
+    <div id="setup-hint" style="display:none;background:#eaf3de;color:#3b6d11;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:4px">✓ URL und Token wurden automatisch erkannt – nur noch das Passwort eintragen.</div>
+    <hr class="divider">
+
+    <label>Nextcloud-URL (ohne Pfad)</label>
+    <input type="url" id="setup-url" placeholder="https://cloud.schulportal.hessen.de" style="width:100%"/>
+    <div class="hint">Alles vor dem /s/… im Freigabe-Link</div>
+
+    <label>Share-Token</label>
+    <input type="text" id="setup-token" placeholder="abc123xyz" style="width:100%"/>
+    <div class="hint">Die Zeichenfolge nach /s/ im Freigabe-Link</div>
+
+    <label>Freigabe-Passwort</label>
+    <input type="password" id="setup-pass" placeholder="••••••••" style="width:100%"/>
+    <div class="hint">Das Passwort, das du beim Teilen gesetzt hast</div>
+
+    <div style="margin-top:20px;display:flex;gap:8px">
+      <button class="btn-primary" onclick="saveSetup()" style="flex:1">Verbinden & starten</button>
+    </div>
+    <div id="setup-error" style="margin-top:12px;font-size:13px;color:#a32d2d;display:none"></div>
+  </div>
+</div>
+
+<div id="main-screen" style="display:none">
+  <div class="topbar">
+    <h1>Jahrgangskoordination</h1>
+    <span id="sync-badge" class="sync-status sync-loading">Verbinde…</span>
+    <button onclick="syncNow()" style="font-size:12px;padding:4px 12px">↻ Sync</button>
+    <button onclick="showSetup()" style="font-size:12px;padding:4px 12px">⚙ Einstellungen</button>
+  </div>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('abstimmung')">Abstimmung</button>
+      <button class="tab" onclick="showTab('uebersicht')">Übersicht</button>
+      <button class="tab" onclick="showTab('admin')">Verwaltung</button>
+    </div>
+    <div id="tab-abstimmung"></div>
+    <div id="tab-uebersicht" style="display:none"></div>
+    <div id="tab-admin" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+const CFG_KEY = 'jahrgang_cfg_v4';
+const DATA_FILE = 'jahrgang_daten.json';
+let cfg = null;
+let state = {jahrgaenge:[], votes:{}};
+let syncTimer = null;
+
+function loadCfg() {
+  try { const s = localStorage.getItem(CFG_KEY); if(s) cfg = JSON.parse(s); } catch(e){}
+}
+function saveCfg() { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
+
+function detectFromUrl() {
+  try {
+    const loc = window.location.href;
+    const match = loc.match(/^(https?:\/\/[^\/]+)(?:\/index\.php)?\/s\/([a-zA-Z0-9]+)/);
+    if (match) return {url: match[1], token: match[2]};
+  } catch(e){}
+  return null;
+}
+function showSetup() {
+  document.getElementById('setup-screen').style.display = '';
+  document.getElementById('main-screen').style.display = 'none';
+  const detected = detectFromUrl();
+  document.getElementById('setup-url').value = (cfg && cfg.url) || (detected && detected.url) || '';
+  document.getElementById('setup-token').value = (cfg && cfg.token) || (detected && detected.token) || '';
+  document.getElementById('setup-pass').value = (cfg && cfg.pass) || '';
+  const hint = document.getElementById('setup-hint');
+  if (hint) hint.style.display = (detected && detected.token) ? '' : 'none';
+}
+
+// WebDAV via public share
+// Nextcloud unterstützt sowohl /public.php/webdav/ als auch /index.php/public.php/webdav/
+function webdavUrl(filename) {
+  return cfg.url + '/index.php/public.php/webdav/' + encodeURIComponent(filename);
+}
+function authHeader() {
+  return 'Basic ' + btoa(cfg.token + ':' + cfg.pass);
+}
+
+async function remoteGet() {
+  const res = await fetch(webdavUrl(DATA_FILE), {
+    headers: { 'Authorization': authHeader() }
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return await res.json();
+}
+
+async function remotePut(data) {
+  const res = await fetch(webdavUrl(DATA_FILE), {
+    method: 'PUT',
+    headers: {
+      'Authorization': authHeader(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data, null, 2)
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+}
+
+async function saveSetup() {
+  const url = document.getElementById('setup-url').value.trim().replace(/\/$/, '');
+  const token = document.getElementById('setup-token').value.trim();
+  const pass = document.getElementById('setup-pass').value;
+  const err = document.getElementById('setup-error');
+  err.style.display = 'none';
+
+  if (!url || !token || !pass) {
+    err.textContent = 'Bitte alle Felder ausfüllen.';
+    err.style.display = '';
+    return;
+  }
+
+  cfg = {url, token, pass};
+  saveCfg();
+
+  try {
+    const existing = await remoteGet();
+    if (existing) {
+      state = existing;
+    } else {
+      state = {jahrgaenge:[], votes:{}};
+      await remotePut(state);
+    }
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('main-screen').style.display = '';
+    render();
+    startAutoSync();
+  } catch(e) {
+    err.textContent = 'Verbindung fehlgeschlagen: ' + e.message + '. Bitte URL, Token und Passwort prüfen.';
+    err.style.display = '';
+  }
+}
+
+function setSyncStatus(status, text) {
+  const b = document.getElementById('sync-badge');
+  if (!b) return;
+  b.className = 'sync-status sync-' + status;
+  b.textContent = text;
+}
+
+async function syncNow() {
+  setSyncStatus('loading', 'Synchronisiere…');
+  try {
+    const remote = await remoteGet();
+    if (remote) state = remote;
+    setSyncStatus('ok', '✓ Synchronisiert');
+    render();
+  } catch(e) {
+    setSyncStatus('err', '✗ Fehler');
+  }
+}
+
+function startAutoSync() {
+  if (syncTimer) clearInterval(syncTimer);
+  syncTimer = setInterval(syncNow, 30000);
+  syncNow();
+}
+
+async function saveAndSync() {
+  setSyncStatus('loading', 'Speichere…');
+  try {
+    await remotePut(state);
+    setSyncStatus('ok', '✓ Gespeichert');
+  } catch(e) {
+    setSyncStatus('err', '✗ Fehler beim Speichern');
+  }
+}
+
+function uid() { return Math.random().toString(36).slice(2,8); }
+function getVote(key, slot) { return (state.votes||{})[key+'_'+slot]||null; }
+
+async function setVote(key, slot, val) {
+  if (!state.votes) state.votes = {};
+  state.votes[key+'_'+slot] = val;
+  render();
+  await saveAndSync();
+}
+
+function getYesVoters(kl) {
+  return {
+    slot1: kl.personen.filter(p => getVote(kl.id+'_'+p,'slot1')==='yes'),
+    slot2: kl.personen.filter(p => getVote(kl.id+'_'+p,'slot2')==='yes')
+  };
+}
+
+function getAssigned(kl) {
+  const {slot1, slot2} = getYesVoters(kl);
+  const a1 = slot1[0]||null;
+  const a2 = slot2.find(p=>p!==a1)||null;
+  return {slot1:a1, slot2:a2};
+}
+
+function calcProgress() {
+  let total=0, done=0;
+  for (const jg of (state.jahrgaenge||[]))
+    for (const kl of jg.klassen) {
+      total+=2;
+      const a=getAssigned(kl);
+      if(a.slot1) done++;
+      if(a.slot2) done++;
+    }
+  return {total, done};
+}
+
+function render() { renderAbstimmung(); renderUebersicht(); renderAdmin(); }
+
+function renderAbstimmung() {
+  const el = document.getElementById('tab-abstimmung');
+  if (!el) return;
+  const prog = calcProgress();
+  const pct = prog.total ? Math.round(prog.done/prog.total*100) : 0;
+  let html = `<div class="summary-grid" style="margin-bottom:16px">
+    <div class="metric"><div class="metric-label">Slots besetzt</div><div class="metric-value">${prog.done}/${prog.total}</div></div>
+    <div class="metric"><div class="metric-label">Vollständig</div><div class="metric-value">${pct}%</div></div>
+  </div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+  <p style="font-size:12px;color:#888780;margin:8px 0 20px">Wird alle 30 Sekunden automatisch aktualisiert.</p>`;
+
+  for (const jg of (state.jahrgaenge||[])) {
+    html += `<div style="margin-bottom:24px"><h2>${jg.name}</h2>`;
+    for (const kl of jg.klassen) {
+      const a = getAssigned(kl);
+      const yes = getYesVoters(kl);
+      html += `<div class="card"><h3>${kl.name}</h3>`;
+      for (const p of kl.personen) {
+        const key = kl.id+'_'+p;
+        const keyJs = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        const v1 = getVote(key,'slot1'), v2 = getVote(key,'slot2');
+        const s1Besetzt = a.slot1 && a.slot1!==p && v1!=='yes';
+        const s2Besetzt = a.slot2 && a.slot2!==p && v2!=='yes';
+        const s1Konflikt = v1==='yes' && a.slot1 && a.slot1!==p;
+        const s2Konflikt = v2==='yes' && a.slot2 && a.slot2!==p;
+        html += `<div class="person-row"><span class="person-name">${p}</span>
+          <span class="slot-label">Termin 1</span>`;
+        if (s1Besetzt) {
+          html += `<span class="slot-warn">bereits besetzt</span>`;
+        } else {
+          html += `<button class="vote-btn ${v1==='yes'?'yes':''}" onclick="setVote('${keyJs}','slot1','yes')">✓ Ja</button>
+                   <button class="vote-btn ${v1==='no'?'no':''}" onclick="setVote('${keyJs}','slot1','no')">✗ Nein</button>`;
+          if (s1Konflikt) html += `<span class="slot-warn">⚠ mehrfach</span>`;
+        }
+        html += `<span class="slot-label" style="margin-left:8px">Termin 2</span>`;
+        if (s2Besetzt) {
+          html += `<span class="slot-warn">bereits besetzt</span>`;
+        } else {
+          html += `<button class="vote-btn ${v2==='yes'?'yes':''}" onclick="setVote('${keyJs}','slot2','yes')">✓ Ja</button>
+                   <button class="vote-btn ${v2==='no'?'no':''}" onclick="setVote('${keyJs}','slot2','no')">✗ Nein</button>`;
+          if (s2Konflikt) html += `<span class="slot-warn">⚠ mehrfach</span>`;
+        }
+        html += `</div>`;
+      }
+      const extra1 = yes.slot1.filter(p=>p!==a.slot1);
+      const extra2 = yes.slot2.filter(p=>p!==a.slot2);
+      html += `<div class="footer-row">
+        <span style="font-size:12px;color:#5f5e5a">Termin 1:</span>
+        ${a.slot1?`<span class="assigned">✓ ${a.slot1}</span>`:`<span class="badge badge-open">noch offen</span>`}
+        ${extra1.length?`<span class="extra-yes">⚠ auch Ja: ${extra1.join(', ')}</span>`:''}
+        <span style="font-size:12px;color:#5f5e5a;margin-left:8px">Termin 2:</span>
+        ${a.slot2?`<span class="assigned">✓ ${a.slot2}</span>`:`<span class="badge badge-open">noch offen</span>`}
+        ${extra2.length?`<span class="extra-yes">⚠ auch Ja: ${extra2.join(', ')}</span>`:''}
+      </div></div>`;
+    }
+    html += `</div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderUebersicht() {
+  const el = document.getElementById('tab-uebersicht');
+  if (!el) return;
+  let html = '';
+  for (const jg of (state.jahrgaenge||[])) {
+    html += `<div class="card"><h2>${jg.name}</h2>
+    <table><tr><th>Klasse</th><th>Termin 1</th><th>Termin 2</th><th>Status</th></tr>`;
+    for (const kl of jg.klassen) {
+      const a = getAssigned(kl);
+      const yes = getYesVoters(kl);
+      const e1 = yes.slot1.filter(p=>p!==a.slot1).length;
+      const e2 = yes.slot2.filter(p=>p!==a.slot2).length;
+      const conflict = e1>0||e2>0;
+      const status = conflict ? '<span class="badge badge-warn">Konflikt</span>' :
+        a.slot1&&a.slot2 ? '<span class="badge badge-done">vollständig</span>' :
+        (a.slot1||a.slot2) ? '<span class="badge badge-open">teilweise</span>' :
+        '<span class="badge badge-no">offen</span>';
+      html += `<tr>
+        <td style="font-weight:500">${kl.name}</td>
+        <td>${a.slot1||'—'}${e1?` <span style="color:#854f0b;font-size:11px">(+${e1})</span>`:''}</td>
+        <td>${a.slot2||'—'}${e2?` <span style="color:#854f0b;font-size:11px">(+${e2})</span>`:''}</td>
+        <td>${status}</td>
+      </tr>`;
+    }
+    html += `</table></div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderAdmin() {
+  const el = document.getElementById('tab-admin');
+  if (!el) return;
+  let html = `<div class="card"><h2>Jahrgang hinzufügen</h2>
+    <div class="row"><input type="text" id="new-jg-name" placeholder="z.B. Jahrgang 8"/>
+    <button onclick="addJahrgang()">+ Jahrgang</button></div></div>`;
+
+  for (const jg of (state.jahrgaenge||[])) {
+    html += `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">${jg.name}</h2>
+      <button class="btn-danger" onclick="removeJahrgang('${jg.id}')">Entfernen</button>
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <input type="text" id="new-kl-${jg.id}" placeholder="z.B. 8a" style="max-width:160px"/>
+      <button onclick="addKlasse('${jg.id}')">+ Klasse</button>
+    </div>`;
+    for (const kl of jg.klassen) {
+      html += `<div class="klasse-block"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:500">${kl.name}</span>
+        <button class="btn-danger" style="font-size:11px;padding:2px 8px" onclick="removeKlasse('${jg.id}','${kl.id}')">×</button>
+      </div>`;
+      for (const p of kl.personen) {
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:13px;flex:1">${p}</span>
+          <button class="btn-danger" style="font-size:11px;padding:2px 8px" onclick="removePerson('${jg.id}','${kl.id}','${p.replace(/'/g,"\\'")}')">×</button>
+        </div>`;
+      }
+      html += `<div class="row" style="margin-top:6px">
+        <input type="text" id="new-p-${kl.id}" placeholder="Name der Kollegin / des Kollegen" style="font-size:13px"/>
+        <button onclick="addPerson('${jg.id}','${kl.id}')" style="font-size:12px">+ Person</button>
+      </div></div>`;
+    }
+    html += `</div>`;
+  }
+
+  html += `<div class="card" style="margin-top:8px"><h2>Abstimmungen zurücksetzen</h2>
+    <p style="font-size:13px;color:#5f5e5a;margin-bottom:12px">Löscht alle Ja/Nein-Stimmen, behält Jahrgänge und Klassen.</p>
+    <button class="btn-danger" onclick="resetVotes()">Alle Abstimmungen zurücksetzen</button></div>`;
+
+  el.innerHTML = html;
+}
+
+async function addJahrgang(){const i=document.getElementById('new-jg-name');if(!i||!i.value.trim())return;if(!state.jahrgaenge)state.jahrgaenge=[];state.jahrgaenge.push({id:uid(),name:i.value.trim(),klassen:[]});i.value='';render();await saveAndSync();}
+async function removeJahrgang(id){state.jahrgaenge=state.jahrgaenge.filter(j=>j.id!==id);render();await saveAndSync();}
+async function addKlasse(jgId){const i=document.getElementById('new-kl-'+jgId);if(!i||!i.value.trim())return;const jg=state.jahrgaenge.find(j=>j.id===jgId);if(jg)jg.klassen.push({id:uid(),name:i.value.trim(),personen:[]});i.value='';render();await saveAndSync();}
+async function removeKlasse(jgId,klId){const jg=state.jahrgaenge.find(j=>j.id===jgId);if(jg)jg.klassen=jg.klassen.filter(k=>k.id!==klId);render();await saveAndSync();}
+async function addPerson(jgId,klId){const i=document.getElementById('new-p-'+klId);if(!i||!i.value.trim())return;const jg=state.jahrgaenge.find(j=>j.id===jgId);const kl=jg&&jg.klassen.find(k=>k.id===klId);if(kl)kl.personen.push(i.value.trim());i.value='';render();await saveAndSync();}
+async function removePerson(jgId,klId,name){const jg=state.jahrgaenge.find(j=>j.id===jgId);const kl=jg&&jg.klassen.find(k=>k.id===klId);if(kl)kl.personen=kl.personen.filter(p=>p!==name);render();await saveAndSync();}
+async function resetVotes(){if(confirm('Wirklich alle Abstimmungen zurücksetzen?')){state.votes={};render();await saveAndSync();}}
+
+function showTab(name){
+  ['abstimmung','uebersicht','admin'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===name?'':'none';});
+  document.querySelectorAll('.tab').forEach((btn,i)=>{btn.classList.toggle('active',['abstimmung','uebersicht','admin'][i]===name);});
+}
+
+loadCfg();
+if (cfg && cfg.url && cfg.token && cfg.pass) {
+  document.getElementById('main-screen').style.display = '';
+  render();
+  startAutoSync();
+} else {
+  showSetup();
+}
+</script>
+</body>
+</html>
