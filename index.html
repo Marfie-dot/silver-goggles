@@ -357,24 +357,31 @@ function renderUebersicht(){
   let html='';
   (state.jahrgaenge||[]).forEach((jg,idx)=>{
     const color=JG_COLORS[idx%JG_COLORS.length];
-    const rows=jg.klassen.flatMap(kl=>(kl.faecher||[]).map(f=>({kl,f})));
-    if(!rows.length)return;
+    if(!jg.klassen.length)return;
     html+=`<div class="jg-block" style="border-color:${color}55;margin-bottom:16px">
       <div class="jg-header" style="background:${color}">${jg.name}</div>
       <div class="jg-body" style="padding:0">
       <table>
-        <tr><th>Klasse</th><th>Fach</th><th>1. Halbjahr</th><th>2. Halbjahr</th><th>Status</th></tr>`;
-    for(const {kl,f} of rows){
-      const v1=getVote(kl.id,f,'slot1');
-      const v2=getVote(kl.id,f,'slot2');
-      const ex1=getExtras(kl.id,f,'slot1');
-      const ex2=getExtras(kl.id,f,'slot2');
-      const status=getStatus(kl.id,f);
+        <tr><th>Klasse</th><th>1. Halbjahr</th><th>2. Halbjahr</th><th>Status</th></tr>`;
+    for(const kl of jg.klassen){
+      // Klassen-Status: irgendjemand Ja für HJ1 und HJ2?
+      const faecher=kl.faecher||[];
+      const ja1=faecher.find(f=>getVote(kl.id,f,'slot1'));
+      const ja2=faecher.find(f=>getVote(kl.id,f,'slot2'));
+      const extras1=faecher.some(f=>getExtras(kl.id,f,'slot1').length>0);
+      const extras2=faecher.some(f=>getExtras(kl.id,f,'slot2').length>0);
+      const conflict=(ja1&&extras1)||(ja2&&extras2);
+      const alleNein=!ja1&&!ja2&&faecher.some(f=>checkAllNein(kl.id,f));
+      let status;
+      if(conflict)status='conflict';
+      else if(ja1&&ja2)status='full';
+      else if(ja1||ja2)status='partial';
+      else if(alleNein)status='allnein';
+      else status='open';
       html+=`<tr>
         <td style="color:${color};font-weight:500">${kl.name}</td>
-        <td>${f}</td>
-        <td>${v1||'—'}${ex1.length?` <span style="color:#8a4500;font-size:11px">(+${ex1.length})</span>`:''}</td>
-        <td>${v2||'—'}${ex2.length?` <span style="color:#8a4500;font-size:11px">(+${ex2.length})</span>`:''}</td>
+        <td>${ja1?`<span class="chip chip-assigned">✓ ${getVote(kl.id,ja1,'slot1')}</span>`:'—'}</td>
+        <td>${ja2?`<span class="chip chip-assigned">✓ ${getVote(kl.id,ja2,'slot2')}</span>`:'—'}</td>
         <td>${statusBadge(status)}</td>
       </tr>`;
     }
@@ -383,7 +390,7 @@ function renderUebersicht(){
   el.innerHTML=html||'<p style="color:#5f5e5a;font-size:13px">Noch keine Daten.</p>';
 }
 
-function renderAdmin(){
+  function renderAdmin(){
   const el=document.getElementById('tab-admin');
   if(!el)return;
   let html=`<div class="card"><h2>Jahrgang hinzufügen</h2>
