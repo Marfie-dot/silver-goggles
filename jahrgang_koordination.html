@@ -21,7 +21,7 @@ body{font-family:system-ui,sans-serif;background:#f5f5f0;color:#1a1a18;min-heigh
 h2{font-size:16px;font-weight:500;margin-bottom:12px}
 h3{font-size:13px;font-weight:500;margin-bottom:8px;color:#5f5e5a;text-transform:uppercase;letter-spacing:0.03em}
 .row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-input[type=text],input[type=url],input[type=password]{flex:1;min-width:160px;font-size:14px;padding:7px 10px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#1a1a18}
+input[type=text]{flex:1;min-width:160px;font-size:14px;padding:7px 10px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#1a1a18}
 input:focus{outline:none;border-color:#888780}
 button{font-size:13px;padding:7px 16px;cursor:pointer;border-radius:8px;border:1px solid #d3d1c7;background:#fff;color:#1a1a18}
 button:hover{background:#f1efe8}
@@ -51,61 +51,18 @@ button:hover{background:#f1efe8}
 .metric-label{font-size:12px;color:#5f5e5a;margin-bottom:4px}
 .metric-value{font-size:22px;font-weight:500}
 .klasse-block{margin-bottom:12px;padding-left:12px;border-left:2px solid #d3d1c7}
-.setup-box{background:#fff;border:1px solid #d3d1c7;border-radius:12px;padding:28px;max-width:540px;margin:48px auto}
-.setup-box h2{font-size:18px;margin-bottom:6px}
-.setup-box p{font-size:14px;color:#5f5e5a;margin-bottom:20px;line-height:1.6}
-label{display:block;font-size:13px;color:#5f5e5a;margin-bottom:4px;margin-top:14px}
-.hint{font-size:12px;color:#888780;margin-top:3px;line-height:1.5}
-.step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start}
-.step-num{background:#1a1a18;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0;margin-top:1px}
-.step-text{font-size:13px;color:#1a1a18;line-height:1.6}
-.step-text b{font-weight:500}
 table{width:100%;font-size:13px;border-collapse:collapse}
 th{text-align:left;padding:6px 8px;font-weight:500;color:#5f5e5a;border-bottom:1px solid #d3d1c7}
 td{padding:7px 8px;border-bottom:1px solid #f1efe8}
-.divider{border:none;border-top:1px solid #e0dfd6;margin:20px 0}
 </style>
 </head>
 <body>
 
-<div id="setup-screen" style="display:none">
-  <div class="setup-box">
-    <h2>Einrichtung</h2>
-    <p>Verbinde das Tool mit einem freigegebenen Nextcloud-Ordner. Folge diesen Schritten einmalig in Nextcloud:</p>
-
-    <div class="step"><div class="step-num">1</div><div class="step-text">Neuen Ordner anlegen, z.B. <b>Jahrgangskoordination</b></div></div>
-    <div class="step"><div class="step-num">2</div><div class="step-text">Ordner per Rechtsklick → <b>Teilen</b> → <b>Link teilen</b> → <b>Passwort setzen</b></div></div>
-    <div class="step"><div class="step-num">3</div><div class="step-text">Den Freigabe-Link kopieren, z.B. <b>https://cloud.schule.de/s/abc123xyz</b> – das <b>abc123xyz</b> am Ende ist dein Token</div></div>
-    <div class="step"><div class="step-num">4</div><div class="step-text">Den Link und das Passwort unten eintragen und auf <b>Verbinden</b> klicken</div></div>
-
-    <div id="setup-hint" style="display:none;background:#eaf3de;color:#3b6d11;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:4px">✓ URL und Token wurden automatisch erkannt – nur noch das Passwort eintragen.</div>
-    <hr class="divider">
-
-    <label>Nextcloud-URL (ohne Pfad)</label>
-    <input type="url" id="setup-url" placeholder="https://cloud.schulportal.hessen.de" style="width:100%"/>
-    <div class="hint">Alles vor dem /s/… im Freigabe-Link</div>
-
-    <label>Share-Token</label>
-    <input type="text" id="setup-token" placeholder="abc123xyz" style="width:100%"/>
-    <div class="hint">Die Zeichenfolge nach /s/ im Freigabe-Link</div>
-
-    <label>Freigabe-Passwort</label>
-    <input type="password" id="setup-pass" placeholder="••••••••" style="width:100%"/>
-    <div class="hint">Das Passwort, das du beim Teilen gesetzt hast</div>
-
-    <div style="margin-top:20px;display:flex;gap:8px">
-      <button class="btn-primary" onclick="saveSetup()" style="flex:1">Verbinden & starten</button>
-    </div>
-    <div id="setup-error" style="margin-top:12px;font-size:13px;color:#a32d2d;display:none"></div>
-  </div>
-</div>
-
-<div id="main-screen" style="display:none">
+<div id="main-screen">
   <div class="topbar">
     <h1>Jahrgangskoordination</h1>
     <span id="sync-badge" class="sync-status sync-loading">Verbinde…</span>
     <button onclick="syncNow()" style="font-size:12px;padding:4px 12px">↻ Sync</button>
-    <button onclick="showSetup()" style="font-size:12px;padding:4px 12px">⚙ Einstellungen</button>
   </div>
   <div class="container">
     <div class="tabs">
@@ -120,97 +77,45 @@ td{padding:7px 8px;border-bottom:1px solid #f1efe8}
 </div>
 
 <script>
-const CFG_KEY = 'jahrgang_cfg_v4';
-const DATA_FILE = 'jahrgang_daten.json';
-let cfg = null;
+const SUPABASE_URL = 'https://yufxmqqwlsoncnkdcmok.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1ZnhtcXF3bHNvbmNua2RjbW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTAyNjAsImV4cCI6MjA5NjIyNjI2MH0.G6k5avWiblXCw75wcNIVWioUIu3cHDXwVIE5jBUmnEI';
+const TABLE = 'MBKoordination';
+const ROW_ID = 1;
+
 let state = {jahrgaenge:[], votes:{}};
 let syncTimer = null;
 
-function loadCfg() {
-  try { const s = localStorage.getItem(CFG_KEY); if(s) cfg = JSON.parse(s); } catch(e){}
-}
-function saveCfg() { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
-
-function detectFromUrl() {
-  try {
-    const loc = window.location.href;
-    const match = loc.match(/^(https?:\/\/[^\/]+)(?:\/index\.php)?\/s\/([a-zA-Z0-9]+)/);
-    if (match) return {url: match[1], token: match[2]};
-  } catch(e){}
-  return null;
-}
-function showSetup() {
-  document.getElementById('setup-screen').style.display = '';
-  document.getElementById('main-screen').style.display = 'none';
-  const detected = detectFromUrl();
-  document.getElementById('setup-url').value = (cfg && cfg.url) || (detected && detected.url) || '';
-  document.getElementById('setup-token').value = (cfg && cfg.token) || (detected && detected.token) || '';
-  document.getElementById('setup-pass').value = (cfg && cfg.pass) || '';
-  const hint = document.getElementById('setup-hint');
-  if (hint) hint.style.display = (detected && detected.token) ? '' : 'none';
-}
-
-// WebDAV via public share
-// Nextcloud unterstützt sowohl /public.php/webdav/ als auch /index.php/public.php/webdav/
-function webdavUrl(filename) {
-  return cfg.url + '/index.php/public.php/webdav/' + encodeURIComponent(filename);
-}
-function authHeader() {
-  return 'Basic ' + btoa(cfg.token + ':' + cfg.pass);
+function headers() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY
+  };
 }
 
 async function remoteGet() {
-  const res = await fetch(webdavUrl(DATA_FILE), {
-    headers: { 'Authorization': authHeader() }
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${ROW_ID}&select=data`, {
+    headers: headers()
   });
-  if (res.status === 404) return null;
   if (!res.ok) throw new Error('HTTP ' + res.status);
-  return await res.json();
+  const rows = await res.json();
+  if (rows.length === 0) return null;
+  return JSON.parse(rows[0].data);
 }
 
 async function remotePut(data) {
-  const res = await fetch(webdavUrl(DATA_FILE), {
-    method: 'PUT',
+  // Upsert: insert or update row with id=1
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+    method: 'POST',
     headers: {
-      'Authorization': authHeader(),
-      'Content-Type': 'application/json'
+      ...headers(),
+      'Prefer': 'resolution=merge-duplicates'
     },
-    body: JSON.stringify(data, null, 2)
+    body: JSON.stringify({id: ROW_ID, data: JSON.stringify(data)})
   });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-}
-
-async function saveSetup() {
-  const url = document.getElementById('setup-url').value.trim().replace(/\/$/, '');
-  const token = document.getElementById('setup-token').value.trim();
-  const pass = document.getElementById('setup-pass').value;
-  const err = document.getElementById('setup-error');
-  err.style.display = 'none';
-
-  if (!url || !token || !pass) {
-    err.textContent = 'Bitte alle Felder ausfüllen.';
-    err.style.display = '';
-    return;
-  }
-
-  cfg = {url, token, pass};
-  saveCfg();
-
-  try {
-    const existing = await remoteGet();
-    if (existing) {
-      state = existing;
-    } else {
-      state = {jahrgaenge:[], votes:{}};
-      await remotePut(state);
-    }
-    document.getElementById('setup-screen').style.display = 'none';
-    document.getElementById('main-screen').style.display = '';
-    render();
-    startAutoSync();
-  } catch(e) {
-    err.textContent = 'Verbindung fehlgeschlagen: ' + e.message + '. Bitte URL, Token und Passwort prüfen.';
-    err.style.display = '';
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error('HTTP ' + res.status + ' ' + txt);
   }
 }
 
@@ -229,7 +134,7 @@ async function syncNow() {
     setSyncStatus('ok', '✓ Synchronisiert');
     render();
   } catch(e) {
-    setSyncStatus('err', '✗ Fehler');
+    setSyncStatus('err', '✗ Fehler: ' + e.message);
   }
 }
 
@@ -245,7 +150,7 @@ async function saveAndSync() {
     await remotePut(state);
     setSyncStatus('ok', '✓ Gespeichert');
   } catch(e) {
-    setSyncStatus('err', '✗ Fehler beim Speichern');
+    setSyncStatus('err', '✗ Fehler: ' + e.message);
   }
 }
 
@@ -404,7 +309,7 @@ function renderAdmin() {
         </div>`;
       }
       html += `<div class="row" style="margin-top:6px">
-        <input type="text" id="new-p-${kl.id}" placeholder="Name der Kollegin / des Kollegen" style="font-size:13px"/>
+        <input type="text" id="new-p-${kl.id}" placeholder="Kürzel oder Fach" style="font-size:13px"/>
         <button onclick="addPerson('${jg.id}','${kl.id}')" style="font-size:12px">+ Person</button>
       </div></div>`;
     }
@@ -431,14 +336,7 @@ function showTab(name){
   document.querySelectorAll('.tab').forEach((btn,i)=>{btn.classList.toggle('active',['abstimmung','uebersicht','admin'][i]===name);});
 }
 
-loadCfg();
-if (cfg && cfg.url && cfg.token && cfg.pass) {
-  document.getElementById('main-screen').style.display = '';
-  render();
-  startAutoSync();
-} else {
-  showSetup();
-}
+startAutoSync();
 </script>
 </body>
 </html>
