@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jahrgangskoordination</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f5f5f0;color:#1a1a18;min-height:100vh}
+.topbar{background:#fff;border-bottom:1px solid #e0dfd6;padding:12px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.topbar h1{font-size:16px;font-weight:500;flex:1}
+.sync-status{font-size:12px;padding:3px 10px;border-radius:6px;font-weight:500}
+.sync-ok{background:#eaf3de;color:#3b6d11}
+.sync-err{background:#fcebeb;color:#a32d2d}
+.sync-loading{background:#faeeda;color:#854f0b}
+.container{max-width:780px;margin:24px auto;padding:0 16px}
+.tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:1px solid #d3d1c7}
+.tab{padding:10px 20px;cursor:pointer;font-size:14px;color:#5f5e5a;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none}
+.tab.active{color:#1a1a18;border-bottom:2px solid #1a1a18;font-weight:500}
+.card{background:#fff;border:1px solid #d3d1c7;border-radius:12px;padding:16px 20px;margin-bottom:12px}
+h2{font-size:16px;font-weight:500;margin-bottom:12px}
+h3{font-size:13px;font-weight:500;margin-bottom:8px;color:#5f5e5a;text-transform:uppercase;letter-spacing:0.03em}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+input[type=text]{flex:1;min-width:160px;font-size:14px;padding:7px 10px;border:1px solid #d3d1c7;border-radius:8px;background:#fff;color:#1a1a18}
+input:focus{outline:none;border-color:#888780}
+button{font-size:13px;padding:7px 16px;cursor:pointer;border-radius:8px;border:1px solid #d3d1c7;background:#fff;color:#1a1a18}
+button:hover{background:#f1efe8}
+.btn-primary{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.btn-primary:hover{background:#2c2c2a}
+.btn-danger{background:#fcebeb;color:#a32d2d;border-color:#f7c1c1}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:500}
+.badge-open{background:#f1efe8;color:#5f5e5a}
+.badge-done{background:#e6f1fb;color:#185fa5}
+.badge-warn{background:#faeeda;color:#854f0b}
+.badge-no{background:#fcebeb;color:#a32d2d}
+.person-row{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #f1efe8;flex-wrap:wrap}
+.person-row:last-child{border-bottom:none}
+.person-name{flex:1;font-size:14px;min-width:100px}
+.slot-label{font-size:12px;color:#5f5e5a;flex-shrink:0}
+.vote-btn{font-size:12px;padding:4px 11px;cursor:pointer;border-radius:7px;border:1px solid #d3d1c7;background:#f1efe8;color:#5f5e5a}
+.vote-btn.yes{background:#eaf3de;color:#3b6d11;border-color:#c0dd97}
+.vote-btn.no{background:#fcebeb;color:#a32d2d;border-color:#f7c1c1}
+.slot-warn{font-size:11px;padding:2px 7px;border-radius:6px;background:#faeeda;color:#854f0b;font-weight:500}
+.assigned{font-size:12px;font-weight:500;color:#185fa5}
+.extra-yes{font-size:12px;color:#854f0b}
+.footer-row{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.progress-bar{height:4px;background:#f1efe8;border-radius:2px;margin-top:8px}
+.progress-fill{height:4px;background:#639922;border-radius:2px;transition:width 0.3s}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
+.metric{background:#f1efe8;border-radius:8px;padding:12px 16px}
+.metric-label{font-size:12px;color:#5f5e5a;margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:500}
+.klasse-block{margin-bottom:12px;padding-left:12px;border-left:2px solid #d3d1c7}
+table{width:100%;font-size:13px;border-collapse:collapse}
+th{text-align:left;padding:6px 8px;font-weight:500;color:#5f5e5a;border-bottom:1px solid #d3d1c7}
+td{padding:7px 8px;border-bottom:1px solid #f1efe8}
+</style>
+</head>
+<body>
+
+<div id="main-screen">
+  <div class="topbar">
+    <h1>Jahrgangskoordination</h1>
+    <span id="sync-badge" class="sync-status sync-loading">Verbinde…</span>
+    <button onclick="syncNow()" style="font-size:12px;padding:4px 12px">↻ Sync</button>
+  </div>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('abstimmung')">Abstimmung</button>
+      <button class="tab" id="tab-btn-uebersicht" style="display:none" onclick="showTab('uebersicht')">Übersicht</button>
+      <button class="tab" id="tab-btn-admin" style="display:none" onclick="showTab('admin')">Verwaltung</button>
+      <button id="admin-login-btn" style="font-size:12px;padding:4px 12px;margin-left:auto" onclick="toggleAdminLogin()">🔒 Admin</button>
+    </div>
+    <div id="admin-login-box" style="display:none;background:#fff;border:1px solid #d3d1c7;border-radius:10px;padding:14px 16px;margin-bottom:16px;display:none;align-items:center;gap:8px;flex-wrap:wrap">
+      <input type="password" id="admin-pw-input" placeholder="Admin-Passwort" style="flex:1;min-width:160px;font-size:14px;padding:7px 10px;border:1px solid #d3d1c7;border-radius:8px"/>
+      <button class="btn-primary" onclick="checkAdminPw()">Anmelden</button>
+      <span id="admin-pw-error" style="font-size:12px;color:#a32d2d;display:none">Falsches Passwort</span>
+    </div>
+    <div id="tab-abstimmung"></div>
+    <div id="tab-uebersicht" style="display:none"></div>
+    <div id="tab-admin" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://yufxmqqwlsoncnkdcmok.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1ZnhtcXF3bHNvbmNua2RjbW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTAyNjAsImV4cCI6MjA5NjIyNjI2MH0.G6k5avWiblXCw75wcNIVWioUIu3cHDXwVIE5jBUmnEI';
+const TABLE = 'MBKoordination';
+const ROW_ID = 1;
+
+let state = {jahrgaenge:[], votes:{}};
+let syncTimer = null;
+
+function headers() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY
+  };
+}
+
+async function remoteGet() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${ROW_ID}&select=data`, {
+    headers: headers()
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const rows = await res.json();
+  if (rows.length === 0) return null;
+  return JSON.parse(rows[0].data);
+}
+
+async function remotePut(data) {
+  // Upsert: insert or update row with id=1
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+    method: 'POST',
+    headers: {
+      ...headers(),
+      'Prefer': 'resolution=merge-duplicates'
+    },
+    body: JSON.stringify({id: ROW_ID, data: JSON.stringify(data)})
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error('HTTP ' + res.status + ' ' + txt);
+  }
+}
+
+function setSyncStatus(status, text) {
+  const b = document.getElementById('sync-badge');
+  if (!b) return;
+  b.className = 'sync-status sync-' + status;
+  b.textContent = text;
+}
+
+async function syncNow() {
+  setSyncStatus('loading', 'Synchronisiere…');
+  try {
+    const remote = await remoteGet();
+    if (remote) state = remote;
+    setSyncStatus('ok', '✓ Synchronisiert');
+    render();
+  } catch(e) {
+    setSyncStatus('err', '✗ Fehler: ' + e.message);
+  }
+}
+
+function startAutoSync() {
+  if (syncTimer) clearInterval(syncTimer);
+  syncTimer = setInterval(syncNow, 30000);
+  syncNow();
+}
+
+async function saveAndSync() {
+  setSyncStatus('loading', 'Speichere…');
+  try {
+    await remotePut(state);
+    setSyncStatus('ok', '✓ Gespeichert');
+  } catch(e) {
+    setSyncStatus('err', '✗ Fehler: ' + e.message);
+  }
+}
+
+function uid() { return Math.random().toString(36).slice(2,8); }
+function getVote(key, slot) { return (state.votes||{})[key+'_'+slot]||null; }
+
+async function setVote(key, slot, val) {
+  if (!state.votes) state.votes = {};
+  state.votes[key+'_'+slot] = val;
+  render();
+  await saveAndSync();
+}
+
+function getYesVoters(kl) {
+  return {
+    slot1: kl.personen.filter(p => getVote(kl.id+'_'+p,'slot1')==='yes'),
+    slot2: kl.personen.filter(p => getVote(kl.id+'_'+p,'slot2')==='yes')
+  };
+}
+
+function getAssigned(kl) {
+  const {slot1, slot2} = getYesVoters(kl);
+  const a1 = slot1[0]||null;
+  const a2 = slot2.find(p=>p!==a1)||null;
+  return {slot1:a1, slot2:a2};
+}
+
+function calcProgress() {
+  let total=0, done=0;
+  for (const jg of (state.jahrgaenge||[]))
+    for (const kl of jg.klassen) {
+      total+=2;
+      const a=getAssigned(kl);
+      if(a.slot1) done++;
+      if(a.slot2) done++;
+    }
+  return {total, done};
+}
+
+function render() { renderAbstimmung(); renderUebersicht(); renderAdmin(); }
+
+function renderAbstimmung() {
+  const el = document.getElementById('tab-abstimmung');
+  if (!el) return;
+  const prog = calcProgress();
+  const pct = prog.total ? Math.round(prog.done/prog.total*100) : 0;
+  let html = `<div class="summary-grid" style="margin-bottom:16px">
+    <div class="metric"><div class="metric-label">Slots besetzt</div><div class="metric-value">${prog.done}/${prog.total}</div></div>
+    <div class="metric"><div class="metric-label">Vollständig</div><div class="metric-value">${pct}%</div></div>
+  </div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+  <p style="font-size:12px;color:#888780;margin:8px 0 20px">Wird alle 30 Sekunden automatisch aktualisiert.</p>`;
+
+  for (const jg of (state.jahrgaenge||[])) {
+    html += `<div style="margin-bottom:24px"><h2>${jg.name}</h2>`;
+    for (const kl of jg.klassen) {
+      const a = getAssigned(kl);
+      const yes = getYesVoters(kl);
+      html += `<div class="card"><h3>${kl.name}</h3>`;
+      for (const p of kl.personen) {
+        const key = kl.id+'_'+p;
+        const keyJs = key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        const v1 = getVote(key,'slot1'), v2 = getVote(key,'slot2');
+        const s1Besetzt = a.slot1 && a.slot1!==p && v1!=='yes';
+        const s2Besetzt = a.slot2 && a.slot2!==p && v2!=='yes';
+        const s1Konflikt = v1==='yes' && a.slot1 && a.slot1!==p;
+        const s2Konflikt = v2==='yes' && a.slot2 && a.slot2!==p;
+        html += `<div class="person-row"><span class="person-name">${p}</span>
+          <span class="slot-label">1. Halbjahr</span>`;
+        if (s1Besetzt) {
+          html += `<span class="slot-warn">bereits besetzt</span>`;
+        } else {
+          html += `<button class="vote-btn ${v1==='yes'?'yes':''}" onclick="setVote('${keyJs}','slot1','yes')">✓ Ja</button>
+                   <button class="vote-btn ${v1==='no'?'no':''}" onclick="setVote('${keyJs}','slot1','no')">✗ Nein</button>`;
+          if (s1Konflikt) html += `<span class="slot-warn">⚠ mehrfach</span>`;
+        }
+        html += `<span class="slot-label" style="margin-left:8px">2. Halbjahr</span>`;
+        if (s2Besetzt) {
+          html += `<span class="slot-warn">bereits besetzt</span>`;
+        } else {
+          html += `<button class="vote-btn ${v2==='yes'?'yes':''}" onclick="setVote('${keyJs}','slot2','yes')">✓ Ja</button>
+                   <button class="vote-btn ${v2==='no'?'no':''}" onclick="setVote('${keyJs}','slot2','no')">✗ Nein</button>`;
+          if (s2Konflikt) html += `<span class="slot-warn">⚠ mehrfach</span>`;
+        }
+        html += `</div>`;
+      }
+      const extra1 = yes.slot1.filter(p=>p!==a.slot1);
+      const extra2 = yes.slot2.filter(p=>p!==a.slot2);
+      html += `<div class="footer-row">
+        <span style="font-size:12px;color:#5f5e5a">1. Halbjahr:</span>
+        ${a.slot1?`<span class="assigned">✓ ${a.slot1}</span>`:`<span class="badge badge-open">noch offen</span>`}
+        ${extra1.length?`<span class="extra-yes">⚠ auch Ja: ${extra1.join(', ')}</span>`:''}
+        <span style="font-size:12px;color:#5f5e5a;margin-left:8px">2. Halbjahr:</span>
+        ${a.slot2?`<span class="assigned">✓ ${a.slot2}</span>`:`<span class="badge badge-open">noch offen</span>`}
+        ${extra2.length?`<span class="extra-yes">⚠ auch Ja: ${extra2.join(', ')}</span>`:''}
+      </div></div>`;
+    }
+    html += `</div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderUebersicht() {
+  const el = document.getElementById('tab-uebersicht');
+  if (!el) return;
+  let html = '';
+  for (const jg of (state.jahrgaenge||[])) {
+    html += `<div class="card"><h2>${jg.name}</h2>
+    <table><tr><th>Klasse</th><th>1. Halbjahr</th><th>2. Halbjahr</th><th>Status</th></tr>`;
+    for (const kl of jg.klassen) {
+      const a = getAssigned(kl);
+      const yes = getYesVoters(kl);
+      const e1 = yes.slot1.filter(p=>p!==a.slot1).length;
+      const e2 = yes.slot2.filter(p=>p!==a.slot2).length;
+      const conflict = e1>0||e2>0;
+      const status = conflict ? '<span class="badge badge-warn">Konflikt</span>' :
+        a.slot1&&a.slot2 ? '<span class="badge badge-done">vollständig</span>' :
+        (a.slot1||a.slot2) ? '<span class="badge badge-open">teilweise</span>' :
+        '<span class="badge badge-no">offen</span>';
+      html += `<tr>
+        <td style="font-weight:500">${kl.name}</td>
+        <td>${a.slot1||'—'}${e1?` <span style="color:#854f0b;font-size:11px">(+${e1})</span>`:''}</td>
+        <td>${a.slot2||'—'}${e2?` <span style="color:#854f0b;font-size:11px">(+${e2})</span>`:''}</td>
+        <td>${status}</td>
+      </tr>`;
+    }
+    html += `</table></div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderAdmin() {
+  const el = document.getElementById('tab-admin');
+  if (!el) return;
+  let html = `<div class="card"><h2>Jahrgang hinzufügen</h2>
+    <div class="row"><input type="text" id="new-jg-name" placeholder="z.B. Jahrgang 8"/>
+    <button onclick="addJahrgang()">+ Jahrgang</button></div></div>`;
+
+  for (const jg of (state.jahrgaenge||[])) {
+    html += `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">${jg.name}</h2>
+      <button class="btn-danger" onclick="removeJahrgang('${jg.id}')">Entfernen</button>
+    </div>
+    <div class="row" style="margin-bottom:12px">
+      <input type="text" id="new-kl-${jg.id}" placeholder="z.B. 8a" style="max-width:160px"/>
+      <button onclick="addKlasse('${jg.id}')">+ Klasse</button>
+    </div>`;
+    for (const kl of jg.klassen) {
+      html += `<div class="klasse-block"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:14px;font-weight:500">${kl.name}</span>
+        <button class="btn-danger" style="font-size:11px;padding:2px 8px" onclick="removeKlasse('${jg.id}','${kl.id}')">×</button>
+      </div>`;
+      for (const p of kl.personen) {
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-size:13px;flex:1">${p}</span>
+          <button class="btn-danger" style="font-size:11px;padding:2px 8px" onclick="removePerson('${jg.id}','${kl.id}','${p.replace(/'/g,"\\'")}')">×</button>
+        </div>`;
+      }
+      html += `<div class="row" style="margin-top:6px">
+        <input type="text" id="new-p-${kl.id}" placeholder="Kürzel oder Fach" style="font-size:13px"/>
+        <button onclick="addPerson('${jg.id}','${kl.id}')" style="font-size:12px">+ Person</button>
+      </div></div>`;
+    }
+    html += `</div>`;
+  }
+
+  html += `<div class="card" style="margin-top:8px"><h2>Abstimmungen zurücksetzen</h2>
+    <p style="font-size:13px;color:#5f5e5a;margin-bottom:12px">Löscht alle Ja/Nein-Stimmen, behält Jahrgänge und Klassen.</p>
+    <button class="btn-danger" onclick="resetVotes()">Alle Abstimmungen zurücksetzen</button></div>`;
+
+  el.innerHTML = html;
+}
+
+async function addJahrgang(){const i=document.getElementById('new-jg-name');if(!i||!i.value.trim())return;if(!state.jahrgaenge)state.jahrgaenge=[];state.jahrgaenge.push({id:uid(),name:i.value.trim(),klassen:[]});i.value='';render();await saveAndSync();}
+async function removeJahrgang(id){state.jahrgaenge=state.jahrgaenge.filter(j=>j.id!==id);render();await saveAndSync();}
+async function addKlasse(jgId){const i=document.getElementById('new-kl-'+jgId);if(!i||!i.value.trim())return;const jg=state.jahrgaenge.find(j=>j.id===jgId);if(jg)jg.klassen.push({id:uid(),name:i.value.trim(),personen:[]});i.value='';render();await saveAndSync();}
+async function removeKlasse(jgId,klId){const jg=state.jahrgaenge.find(j=>j.id===jgId);if(jg)jg.klassen=jg.klassen.filter(k=>k.id!==klId);render();await saveAndSync();}
+async function addPerson(jgId,klId){const i=document.getElementById('new-p-'+klId);if(!i||!i.value.trim())return;const jg=state.jahrgaenge.find(j=>j.id===jgId);const kl=jg&&jg.klassen.find(k=>k.id===klId);if(kl)kl.personen.push(i.value.trim());i.value='';render();await saveAndSync();}
+async function removePerson(jgId,klId,name){const jg=state.jahrgaenge.find(j=>j.id===jgId);const kl=jg&&jg.klassen.find(k=>k.id===klId);if(kl)kl.personen=kl.personen.filter(p=>p!==name);render();await saveAndSync();}
+async function resetVotes(){if(confirm('Wirklich alle Abstimmungen zurücksetzen?')){state.votes={};render();await saveAndSync();}}
+
+function showTab(name){
+  ['abstimmung','uebersicht','admin'].forEach(t=>{document.getElementById('tab-'+t).style.display=t===name?'':'none';});
+  document.querySelectorAll('.tab').forEach((btn,i)=>{btn.classList.toggle('active',['abstimmung','uebersicht','admin'][i]===name);});
+}
+
+const ADMIN_PW = 'Schule2025';
+let isAdmin = false;
+
+function toggleAdminLogin() {
+  const box = document.getElementById('admin-login-box');
+  if (isAdmin) {
+    // Abmelden
+    isAdmin = false;
+    document.getElementById('tab-btn-uebersicht').style.display = 'none';
+    document.getElementById('tab-btn-admin').style.display = 'none';
+    document.getElementById('admin-login-btn').textContent = '🔒 Admin';
+    showTab('abstimmung');
+  } else {
+    box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
+  }
+}
+
+function checkAdminPw() {
+  const pw = document.getElementById('admin-pw-input').value;
+  const err = document.getElementById('admin-pw-error');
+  if (pw === ADMIN_PW) {
+    isAdmin = true;
+    document.getElementById('admin-login-box').style.display = 'none';
+    document.getElementById('tab-btn-uebersicht').style.display = '';
+    document.getElementById('tab-btn-admin').style.display = '';
+    document.getElementById('admin-login-btn').textContent = '🔓 Admin';
+    document.getElementById('admin-pw-input').value = '';
+    err.style.display = 'none';
+  } else {
+    err.style.display = '';
+  }
+}
+
+startAutoSync();
+</script>
+</body>
+</html>
