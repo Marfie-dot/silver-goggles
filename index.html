@@ -286,7 +286,7 @@ function renderAbstimmung(){
       if(!(kl.faecher||[]).length)continue;
       const full=isKlasseFull(kl);
       // Vollständige Klassen automatisch zuklappen
-      const klOpen=full?false:openKl.has(kl.id);
+      const klOpen=openKl.has(kl.id);
       const ja1fach=(kl.faecher||[]).find(f=>getVote(kl.id,f,'slot1'));
       const ja2fach=(kl.faecher||[]).find(f=>getVote(kl.id,f,'slot2'));
 
