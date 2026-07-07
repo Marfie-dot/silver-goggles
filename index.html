@@ -233,7 +233,7 @@ function renderAbstimmung(){
   const fachOptionen2=alleFaecher.map(f=>`<option value="${f}" ${myFach2===f?'selected':''}>${f}</option>`).join('');
 
   let html=`<div class="anleitung">
-    <b>So funktioniert die Abstimmung:</b> Trage oben dein Kürzel ein und wähle optional dein Fach – dann siehst du nur die Klassen die dich betreffen. Klicke bei jeder deiner Klassen auf <b>✓ Ja</b> für das Halbjahr, in dem du das Aufgabenformat umsetzen möchtest.<br><br><b>Wichtig:</b> Klicke auch auf <b>✗ Nein</b>, wenn du in einem Halbjahr nicht zur Verfügung stehst. Nur so ist erkennbar, dass du bereits abgestimmt hast.
+    <b>So funktioniert die Abstimmung:</b> Trage oben dein Kürzel ein und wähle optional dein Fach – dann siehst du nur die Jahrgänge die dich betreffen. Klicke bei jeder deiner Klassen auf <b>✓ Ja</b> für das Halbjahr, in dem du das Aufgabenformat umsetzen möchtest.<br><br><b>Wichtig:</b> Klicke auch auf <b>✗ Nein</b>, wenn du in einem Halbjahr nicht zur Verfügung stehst. Nur so ist erkennbar, dass du bereits abgestimmt hast.
   </div>
   <div class="kuerzel-banner">
     <span style="font-size:13px;font-weight:500;flex-shrink:0">Kürzel:</span>
